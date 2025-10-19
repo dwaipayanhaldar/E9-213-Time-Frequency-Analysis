@@ -1,0 +1,89 @@
+%% 📘 Section 1: Initialization
+clear; clc; close all;
+
+disp('--- High-Resolution STFT of LIGO Data ---');
+
+% Sampling and file details
+orig_fs = 4096;  % Original sampling rate (Hz)
+file_path = '/Users/dwaipayanhaldar/Downloads/Notes and Books/IISc Coding Assignments and Project/E9-213-Time-Frequency-Analysis/Assignment 3/Dataset_for_A3/LIGO/H-H1_GWOSC_4KHZ_R1-1126257415-4096.hdf5';
+
+%% 📂 Section 2: Load Signal
+signal = h5read(file_path, '/strain/Strain');
+N = length(signal);
+T = N / orig_fs;
+
+fprintf('Signal loaded: %.2f seconds, %.2f Hz sampling (%d samples)\n', T, orig_fs, N);
+
+%% 🔽 Section 3: Downsampling
+% Downsample by 8 to reduce data size but preserve structure
+ds_factor = 8;
+fs = orig_fs / ds_factor;
+
+signal_ds = downsample(signal, ds_factor);
+t_ds = (0:length(signal_ds)-1) / fs;
+
+fprintf('Downsampled signal: %.2f Hz sampling, %.2f seconds duration (%d samples)\n', fs, T, length(signal_ds));
+
+%% 🧹 Section 4: Preprocessing
+% Remove trend and normalize
+signal_ds = detrend(signal_ds);
+signal_ds = signal_ds / max(abs(signal_ds));
+
+disp('Signal detrended and normalized.');
+
+%% 🎛️ Section 5: Short-Time Fourier Transform (STFT)
+% Choose parameters for detailed visualization
+win_len = 2048;                 % window length (~4s)
+window = hann(win_len, 'periodic');
+noverlap = round(0.875 * win_len);  % 87.5% overlap
+nfft = 8192;                    % zero-padding for fine frequency grid
+
+% Compute STFT
+fprintf('Computing STFT... (window=%d, overlap=%.1f%%, nfft=%d)\n', win_len, 100*noverlap/win_len, nfft);
+[S, F, T_stft] = spectrogram(signal_ds, window, noverlap, nfft, fs);
+
+% Power in dB
+S_dB = 10 * log10(abs(S).^2 + eps);
+
+%% 📊 Section 6: Visualization
+figure('Position', [100 100 1200 500]);
+imagesc(T_stft, F, S_dB);
+axis xy;
+colormap turbo;
+colorbar;
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('High-Resolution STFT of LIGO Signal (Downsampled ×8)');
+set(gca, 'FontSize', 12);
+
+% Focus on lower frequency region (LIGO events are usually <200 Hz)
+ylim([0 200]);
+
+disp('STFT visualization complete.');
+
+%% ⚡ Section 8: Wigner–Ville Distribution (WVD) - corrected
+disp('Computing Wigner–Ville Distribution (WVD) (smoothedPseudo)...');
+
+% Make analytic signal to avoid negative-frequency mirror
+signal_analytic = hilbert(signal_ds);
+
+% Compute Smoothed-Pseudo WVD (built-in)
+% NOTE: use the "smoothedPseudo" option (no TimeResolution/FrequencyResolution args)
+[wvd_out, F_wvd, T_wvd] = wvd(signal_analytic, fs, "smoothedPseudo");
+
+% Convert to dB
+wvd_dB = 10*log10(abs(wvd_out) + eps);
+
+% Plot WVD (smoothed)
+figure('Position', [100 100 1200 500]);
+imagesc(T_wvd, F_wvd, wvd_dB);
+axis xy; colormap turbo; colorbar;
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('Smoothed-Pseudo Wigner–Ville Distribution (Downsampled LIGO Signal)');
+set(gca, 'FontSize', 12);
+
+% Focus on band of interest (example for LIGO)
+ylim([0 200]);   % change if you want a different frequency window
+
+disp('WVD computation and visualization complete.')

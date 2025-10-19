@@ -1,0 +1,188 @@
+\documentclass[12pt,a4paper,onecolumn]{exam}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage[skins]{tcolorbox} % Use [skins] to get the rounded shape
+
+% --- Define our simple \questionheader command ---
+\newcommand{\questionheader}[1]{%
+  \begin{tcolorbox}[
+    enhanced,
+    colback=black,
+    coltext=white,
+    boxrule=0pt,              
+    fontupper=\Large\bfseries, 
+    arc=4mm                   
+  ]
+  #1 
+  \end{tcolorbox}%
+}
+% --- End of definition ---
+\newtcolorbox{answerbox}[1]{
+  boxrule=0.4pt,   % Sets the thickness of the border
+  colback=white,   % Sets the background color
+  height=#1,       % <-- Use the first argument (#1) as the height
+}
+
+
+\usepackage[font = small]{caption}
+\usepackage{subcaption}
+
+\newenvironment{blanksolution}
+  {%
+    \renewcommand{\solutiontitle}{\noindent}%
+    \begin{solution}%
+  }%
+  {\end{solution}}  
+\usepackage{listings}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily, 
+    }
+
+\begin{document}
+
+\begingroup  
+    \centering
+    \LARGE E9 213 Time Frequency Analysis\\
+    \LARGE Assignment 3\\[0.5em]
+    \large \today\\[0.5em]
+    \large Dwaipayan Haldar\par
+\endgroup
+\noindent\rule{\textwidth}{0.5pt}
+\printanswers
+\renewcommand{\solutiontitle}{\noindent\textbf{Ans:}\enspace}
+
+\questionheader{1. Computing the Spectrogram and WVD}
+\begin{solution}
+  \begin{itemize}
+    \item[(a)] \textbf{The Spectrogram:} 
+    In the code, I have implemented a interactive slider for changing the hop ($Window Length - Overlap$) and analysed each signal with different      overlap values and window length for different windows. With increase in window length, the frequency resolution is bound to be sharper and we loose time information. That is expected to happen. Some interesting results come with different window overlap. 
+    \begin{itemize}
+      \item[(i)] \textbf{The Bartlett Window:}
+      Barlett Window is the triangular window, it has a fourier transform of sinc function. Multiplication of that function in time domain is like convolution in frequency domain with sinc and so there are side lobes present in some of the cases. 
+      \begin{itemize}
+
+        \item[$\bullet$] $sin(w_ot)$:\\
+        With a smaller window, the frequency resolution is very very poor. With 1 sample shift, that is, with almost 100\% overlap there are many side lobes in the Fig.\ref{fig:1}. Increasing the window length definitely improves the frequency resolution but still side lobes are quite visible like Fig.\ref{fig:2}. With high overlap, the sidelobes are clearly visible because the dense, sample-by-sample analysis causes the repeated leakage pattern to form solid lines when plotted. Conversely, with low overlap, the time-domain analysis becomes sparse. Although the sidelobes are still calculated, they are plotted with \verb|matplotlib| too far apart to connect visually, making them seem to disappear in the final image. So, with decrease in overlap like in Fig.\ref{fig:3} the side lobes become almost invisbile and there is a clear line at 50Hz.
+      
+      \end{itemize}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{sin_1_50.0.png}
+        \caption{STFT of $sin(w_ot)$ with Window Size 50 and overlap of 49(Bartlett Window)}
+        \label{fig:1}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35 ]{sin_1_300.0.png}
+        \caption{STFT of $sin(w_ot)$ with Window Size 300 and overlap of 299(Bartlett Window)}
+        \label{fig:2}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{sin_21_300.0.png}
+        \caption{STFT of $sin(w_ot)$ with Window Size 300 and overlap of 279(Bartlett Window)}
+        \label{fig:3}
+        \end{figure}
+      
+        \begin{itemize}
+        
+        \item[$\bullet$] $e^{-\frac{(x-5)^2}{\sigma^2}}$:\\
+        Gaussian has a frequency of 0 almost all the time. The fourier transform of gaussian is a gaussian which has max frequency component near the center or zero frequency. Again, the similar pattern is seen, with more overlap there is many side lobe, that goes away when overlap is decreased. One important observation is that when the overlap is more, more information is retained. In the middle portion the spectrogram value is higher for frequency greater than 0. That should be the case because in the middle portion when multiplied by window function the function would not be exactly a straight line so there must be some magnitude at frequency above 0 and 0 for values near both ends. These information is lost when the overlap is reduced since almost whole of the signal has a 0 frequency over the whole time interval. Fig.\ref{fig:4} shows the plot with poor frequency resolution. It seems as if there are multiple frequencies present. Fig.\ref{fig:5} shows the plot with better frequency resolution but with side lobes. Fig.\ref{fig:6} shows the plot where side lobes are absent but it seems all the time the function has a frequency 0. 
+        
+        \end{itemize}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{gaussian_1_50.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}$ with Window Size 50 and overlap of 49(Bartlett Window)}
+        \label{fig:4}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35 ]{gaussian_1_250.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}$ with Window Size 250 and overlap of 249(Bartlett Window)}
+        \label{fig:5}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{gaussian_21_250.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}$ with Window Size 250 and overlap of 229(Bartlett Window)}
+        \label{fig:6}
+        \end{figure}
+      
+      \begin{itemize}
+
+      \item[$\bullet$] $sin(2\pi\gamma(t)t)$, where $\gamma(t)$ varies linearly between $5Hz$ and $50Hz$: \\
+      This was a interesting problem. When there was maximum overlap, the linear chirp is clearly visible to be increasing from $5Hz$ to $50Hz$. The resolution was poor for Fig.\ref{fig:7} the frequency improved by increasing the time domain window in Fig.\ref{fig:8} .But when we change the overlap to be less than that. Then we loose all the information about the variation of the frequency and we almost get the lower frequency signal in the plot, just as in Fig.\ref{fig:9}
+
+      \end{itemize}
+      \begin{itemize}
+      \item[$\bullet$] $e^{-\frac{(x-5)^2}{\sigma^2}}sin(w_0t)$, $0 \leq t < 10$: \\
+      This has almost the same graph and observation as the normal gaussian function. The frequency content is different since it is multiplied by a constant frequency term of $sin$. So the net frequency content is around $50Hz$ not $0$. Fig.\ref{fig:10} gives the short time fourier transform of the signal with poor frequency. Fig.\ref{fig:11} gives the finer resolution one. Fig.\ref{fig:12} gives the function with less overlap. An interesting observation is the presence of horizontal lines throughout the time axis. When the sin is multiplied by the gaussian function at low values, it fluctuates rapidly between positive and negative, introducing impulse-like components that contain all frequencies, appearing as vertical lines.
+      \end{itemize}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{linear_chirp_1_50.0.png}
+        \caption{STFT of $sin(2\pi\gamma(t)t)$ with Window Size 50 and overlap of 49(Bartlett Window)}
+        \label{fig:7}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35 ]{linear_chirp_1_250.0.png}
+        \caption{STFT of $sin(2\pi\gamma(t)t)$ with Window Size 250 and overlap of 249(Bartlett Window)}
+        \label{fig:8}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{linear_chirp_21_250.0.png}
+        \caption{STFT of $sin(2\pi\gamma(t)t)$  with Window Size 250 and overlap of 229(Bartlett Window)}
+        \label{fig:9}
+        \end{figure}
+
+      
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{gabor_1_50.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}sin(w_0t)$ with Window Size 50 and overlap of 49(Bartlett Window)}
+        \label{fig:10}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{gabor_1_250.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}sin(w_0t)$ with Window Size 250 and overlap of 249(Bartlett Window)}
+        \label{fig:11}
+        \end{figure}
+
+        \begin{figure}[H]
+        \centering
+        \includegraphics[scale = 0.35]{gabor_21_250.0.png}
+        \caption{STFT of $e^{-\frac{(x-5)^2}{\sigma^2}}sin(w_0t)$ with Window Size 250 and overlap of 229(Bartlett Window)}
+        \label{fig:12}
+        \end{figure}
+
+    \item[(ii)] \textbf{Gaussian Window:}
+    
+    \end{itemize}
+    \item[(b)] \textbf{The Wigner-Ville Distribution:} 
+  \end{itemize}
+
+\end{solution}
+
+
+
+\end{document}
